@@ -4,6 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from './entities/user.entity';
 import { ConflictException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -23,14 +24,22 @@ export class UserService {
       throw new ConflictException('Email or username already taken');
     }
 
-    return this.prisma.user.create({
-      data: {
-        name: createUserDto.name,
-        phone: createUserDto.phone,
-        email: createUserDto.email,
-        username: createUserDto.username,
-        password: createUserDto.password,
-      },
+    const data ={
+      ...createUserDto,
+      password: await bcrypt.hash(createUserDto.password, 10),
+    }
+
+    const createUser = await this.prisma.user.create({ data });
+
+    return{
+      ...createUser, 
+      password: undefined,
+    };
+  }
+
+  async findByEmail(email:string){
+    this.prisma.user.findUnique({
+      where: {email},
     });
   }
 
@@ -69,6 +78,7 @@ export class UserService {
   }
 
   async remove(userId: number): Promise<User> {
+
     const user = await this.prisma.user.delete({
       where: { id: userId },
     });
@@ -79,5 +89,7 @@ export class UserService {
 
     return user;
   }
+
+  
 
 }
