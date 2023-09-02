@@ -19,6 +19,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
     @UseGuards(LocalAuthGuard)
     @HttpCode(HttpStatus.OK)
     login(){
+      return 'Realizar login'
       //return this.authService.login();
     }
   }

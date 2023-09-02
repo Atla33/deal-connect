@@ -38,13 +38,13 @@ export class UserService {
   }
 
   async findByEmail(email:string){
-    this.prisma.user.findUnique({
+   return this.prisma.user.findUnique({
       where: {email},
     });
   }
 
   async findByUsername(username:string){
-    this.prisma.user.findUnique({
+    return this.prisma.user.findUnique({
       where: {username},
     });
   }
