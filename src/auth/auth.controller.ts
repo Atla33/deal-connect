@@ -8,22 +8,17 @@ import {
     Request,
     UseGuards
   } from '@nestjs/common';
-  import { AuthGuard } from '../auth/guards/auth.guard';
   import { AuthService } from './auth.service';
+import { LocalAuthGuard } from './guards/local-auth.guard';
   
-  @Controller('auth')
+  @Controller()
   export class AuthController {
-    constructor(private authService: AuthService) {}
+    constructor(private readonly authService: AuthService) {}
   
-    @HttpCode(HttpStatus.OK)
     @Post('login')
-    signIn(@Body() signInDto: Record<string, any>) {
-      return this.authService.signIn(signInDto.username, signInDto.password);
-    }
-  
-    @UseGuards(AuthGuard)
-    @Get('profile')
-    getProfile(@Request() req) {
-      return req.user;
+    @UseGuards(LocalAuthGuard)
+    @HttpCode(HttpStatus.OK)
+    login(){
+      //return this.authService.login();
     }
   }
