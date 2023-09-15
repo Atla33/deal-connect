@@ -26,9 +26,6 @@ model User {
   createdAt     DateTime  @default(now())
   modifiedAt    DateTime  @default(now())
   products      Product[]
-  favorites     Favorite[] 
-  dishes        Dish[]    
-  menusRU       MenuRU[] 
 }
 
 model Product {
@@ -41,39 +38,3 @@ model Product {
   userId      Int
   user        User     @relation(fields: [userId], references: [id])
 }
-
-model Favorite {
-  id              Int    @id @default(autoincrement())
-  favoritedUserId Int
-  user            User   @relation(fields: [favoritedUserId], references: [id])
-}
-
-model MenuRU {
-  id            Int           @id @default(autoincrement())
-  date          String
-  meals         String
-  value         String
-  createdAt     DateTime      @default(now())
-  modifiedAt    DateTime      @default(now())
-  deletedAt     DateTime      @default(now())
-  dishes        Dish[]     
-  menuUserId    Int
-  user          User  @relation(fields: [menuUserId], references: [id])
-}
-
-model Dish {
-  id            Int           @id @default(autoincrement())
-  name          String
-  createdAt     DateTime      @default(now())
-  modifiedAt    DateTime      @default(now())
-  deletedAt     DateTime      @default(now())
-  description   String
-  userIdDishes  Int
-  user          User?        @relation(fields: [userIdDishes], references: [id])
-  menusRU       MenuRU[]      
-}
-
-
-
-
-
