@@ -35,6 +35,6 @@ model Product {
   value       Float
   seller      String
   image       String
-  userId      Int
+  userId      Int      
   user        User     @relation(fields: [userId], references: [id])
 }

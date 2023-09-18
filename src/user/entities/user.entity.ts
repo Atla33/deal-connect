@@ -1,7 +1,8 @@
 import { Role } from '@prisma/client';
 
 export class User {
-    id: number;     
+    id: number;
+    name:string;     
     phone:string;         
     email: string;         
     username: string;
