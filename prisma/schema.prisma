@@ -10,31 +10,50 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role { 
+enum Role {
   USER
   ADMIN
 }
 
 model User {
-  id            Int       @id @default(autoincrement())
-  name          String
-  phone         String    
-  email         String    @unique
-  username      String    @unique
-  password      String
-  role          Role      @default(USER)
-  createdAt     DateTime  @default(now())
-  modifiedAt    DateTime  @default(now())
-  products      Product[]
+  id         Int       @id @default(autoincrement())
+  name       String
+  phone      String
+  email      String    @unique
+  username   String    @unique
+  password   String
+  role       Role      @default(USER)
+  createdAt  DateTime  @default(now())
+  modifiedAt DateTime  @default(now())
+  products   Product[]
 }
 
 model Product {
+  id     Int    @id @default(autoincrement())
+  name   String
+  type   String
+  value  String
+  image  String
+  userId Int
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Dish {
   id          Int      @id @default(autoincrement())
   name        String
-  type        String
-  value       Float
-  seller      String
-  image       String
-  userId      Int      
-  user        User     @relation(fields: [userId], references: [id])
+  Description String
+  createdAt   DateTime @default(now())
+  modifiedAt  DateTime @default(now())
+  deletedAt   DateTime @default(now())
+  menu        Menu[]
+}
+
+model Menu {
+  id     Int    @id @default(autoincrement())
+  date   String
+  hours  String
+  value  String
+  meals  String
+  dishId Int
+  dish   Dish   @relation(fields: [dishId], references: [id])
 }
