@@ -7,8 +7,8 @@ import { RolesGuard } from '../auth/guards/role.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 
-//@Roles(Role.ADMIN)
-//@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('dish')
 export class DishController {
   constructor(private readonly dishService: DishService) {}
