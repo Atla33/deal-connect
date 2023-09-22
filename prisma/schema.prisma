@@ -27,7 +27,21 @@ model User {
   modifiedAt    DateTime  @default(now())
   products      Product[]
   menu          Menu[]
-  favorite      Favorite[]
+    // Relation to favorites where the user is the source of favoriting
+  favoritedBy    Favorite[] @relation("FavoritedByUser")
+  // Relation to favorites where the user is the target of favoriting
+  favoritedUser  Favorite[] @relation("FavoritedUser")
+  
+}
+
+model Favorite {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  favoritedUserId Int
+  user          User     @relation("FavoritedByUser", fields: [userId], references: [id])
+  favoritedUser User     @relation("FavoritedUser", fields: [favoritedUserId], references: [id])
+
+  @@unique([userId, favoritedUserId])
 }
 
 model Product {
@@ -37,12 +51,6 @@ model Product {
   value       String
   image       String
   userId      Int      
-  user        User     @relation(fields: [userId], references: [id])
-}
-
-model Favorite {
-  id          Int      @id @default(autoincrement())
-  userId      Int
   user        User     @relation(fields: [userId], references: [id])
 }
 

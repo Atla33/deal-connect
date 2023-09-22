@@ -9,10 +9,11 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { DishModule } from './dish/dish.module';
 import { ProductModule } from './product/product.module';
 import { MenuModule } from './menu/menu.module';
+import { FavoriteModule } from './favorite/favorite.module';
 
 
 @Module({
-  imports: [PrismaModule,AuthModule, UserModule, DishModule, ProductModule, MenuModule],
+  imports: [PrismaModule,AuthModule, UserModule, DishModule, ProductModule, MenuModule, FavoriteModule],
   controllers: [AppController],
   providers: [AppService,
     {
