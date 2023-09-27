@@ -16,6 +16,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/role.guard';
 import { Roles } from './decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import { RefreshJwtAuthGuard } from './guards/refresh-jwt-auth.guard';
 
 
   
@@ -42,5 +43,11 @@ import { Role } from '@prisma/client';
     @Get('Roles')
     getRole(){
       return "Foi"
+    }
+
+    @UseGuards(RefreshJwtAuthGuard)
+    @Post('refresh')
+    async refreshToken(@Request() req) {
+      return this.authService.refreshToken(req.user);
     }
   }
