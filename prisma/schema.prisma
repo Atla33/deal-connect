@@ -27,9 +27,7 @@ model User {
   modifiedAt    DateTime  @default(now())
   products      Product[]
   menu          Menu[]
-    // Relation to favorites where the user is the source of favoriting
   favoritedBy    Favorite[] @relation("FavoritedByUser")
-  // Relation to favorites where the user is the target of favoriting
   favoritedUser  Favorite[] @relation("FavoritedUser")
   
 }
