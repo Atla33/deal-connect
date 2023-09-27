@@ -1,8 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateFavoriteDto } from './dto/create-favorite.dto';
 import { UpdateFavoriteDto } from './dto/update-favorite.dto';
-import { Favorite, User } from '@prisma/client'; // Certifique-se de importar os tipos corretos do Prisma
+import { Favorite } from '@prisma/client'; // Certifique-se de importar os tipos corretos do Prisma
 
 @Injectable()
 export class FavoriteService {
@@ -10,6 +10,25 @@ export class FavoriteService {
 
   async create(createFavoriteDto: CreateFavoriteDto): Promise<Favorite> {
     const { userId, favoritedUserId } = createFavoriteDto;
+
+    // Verifique se o usuário está tentando se favoritar
+    if (userId === favoritedUserId) {
+      throw new ConflictException('User cannot favorite themselves');
+    }
+
+    // Verifique se o usuário já favoritou o outro usuário
+    const existingFavorite = await this.prisma.favorite.findUnique({
+      where: {
+        userId_favoritedUserId: {
+          userId,
+          favoritedUserId,
+        },
+      },
+    });
+
+    if (existingFavorite) {
+      throw new ConflictException('Favorite already exists');
+    }
 
     // Verifique se os usuários existem antes de criar o favorito
     const user = await this.prisma.user.findUnique({
