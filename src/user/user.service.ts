@@ -13,7 +13,7 @@ export class UserService {
 
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    // Verifica se já existe um usuário com o mesmo email ou username
+  
     const existingUser = await this.prisma.user.findFirst({
       where: {
         OR: [{ email: createUserDto.email }, { username: createUserDto.username }],
@@ -66,13 +66,18 @@ export class UserService {
   }
 
   async update(userId: number, updateUserDto: UpdateUserDto): Promise<User> {
+    let hashedPassword;
+    if (updateUserDto.password) {
+      hashedPassword = await bcrypt.hash(updateUserDto.password, 10);
+    }
+
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: {
         name: updateUserDto.name,
         phone: updateUserDto.phone,
         email: updateUserDto.email,
-        password: updateUserDto.password,
+        password: hashedPassword || undefined,
       },
     });
 
