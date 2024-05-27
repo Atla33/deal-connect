@@ -1,6 +1,6 @@
-
 import { diskStorage } from 'multer';
 import { Request } from 'express';
+import { BadRequestException } from '@nestjs/common';
 
 export const multerOptions = {
     storage: diskStorage({
@@ -13,11 +13,12 @@ export const multerOptions = {
         }
     }),
     fileFilter: (req: Request, file: Express.Multer.File, callback: (error: Error | null, acceptFile: boolean) => void) => {
-        if (file.mimetype.startsWith('image/')) {
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (allowedTypes.includes(file.mimetype)) {
             callback(null, true);
         } else {
-            callback(new Error('Unsupported file type'), false);
+            callback(new BadRequestException('Unsupported file type'), false);
         }
     },
-    limits: { fileSize: 1024 * 1024 * 5 } // 5MB
+    limits: { fileSize: 1024 * 1024 * 50 }
 };

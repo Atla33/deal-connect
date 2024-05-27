@@ -30,6 +30,12 @@ export class ProductController {
     return this.productService.findAll();
   }
 
+    
+  @Get('by-user/:userId')
+  findByUserId(@Param('userId', ParseIntPipe) userId: number) {
+    return this.productService.findByUserId(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.productService.findOne(id);

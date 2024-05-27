@@ -1,41 +1,50 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import * as sharp from 'sharp';
+
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import * as fs from 'fs/promises';
+import { UploadService } from 'src/modules/upload/upload.service';
+import { CreateUploadDto } from 'src/modules/upload/dto/create-upload.dto';
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly uploadService: UploadService
+  ) {}
 
   async create(createProductDto: CreateProductDto, imageFile: Express.Multer.File) {
     if (!imageFile) {
       throw new BadRequestException('Imagem do produto é obrigatória');
     }
-
-    const imageFileName = uuidv4() + path.extname(imageFile.originalname);
-    const imagePath = path.join(__dirname, '..', '..', 'assets', 'images', imageFileName);
-
-    try {
-      await sharp(imageFile.buffer)
-        .resize(800)
-        .jpeg({ quality: 80 })
-        .toFile(imagePath); 
-    } catch (error) {
-      throw new Error('Erro ao comprimir e salvar a imagem');
+  
+    const userId = Number(createProductDto.userId);
+    if (isNaN(userId)) {
+      throw new BadRequestException('UserId deve ser um número válido');
     }
-
+  
+    const uploadDto: CreateUploadDto = {
+      fieldname: imageFile.fieldname,
+      originalname: imageFile.originalname,
+      encoding: imageFile.encoding,
+      mimetype: imageFile.mimetype,
+      buffer: await fs.readFile(imageFile.path),
+      size: imageFile.size,
+    };
+  
+    // Uma exceção será lançada aqui se o upload falhar.
+    const uploadResult = await this.uploadService.upload(uploadDto);
+  
     return this.prisma.product.create({
       data: {
         ...createProductDto,
-        image: `images/${imageFileName}`,
+        userId: userId,
+        image: uploadResult.url
       },
     });
   }
-
+  
   async update(id: number, updateProductDto: UpdateProductDto, imageFile?: Express.Multer.File) {
     const existingProduct = await this.prisma.product.findUnique({
       where: { id },
@@ -43,42 +52,51 @@ export class ProductService {
     if (!existingProduct) {
       throw new NotFoundException('Produto não encontrado');
     }
-
-    if (imageFile) {
-      const existingImagePath = path.join(__dirname, '..', '..', 'assets', 'images', existingProduct.image);
-      try {
-        await fs.unlink(existingImagePath);
-      } catch (err) {
-        if (err.code !== 'ENOENT') { 
-          throw new Error('Erro ao remover a imagem existente');
-        }
+  
+    // Verificação e conversão do userId
+    let userId = updateProductDto.userId;
+    if (typeof userId === 'string') {
+      userId = Number(userId);
+      if (isNaN(userId)) {
+        throw new BadRequestException('UserId deve ser um número válido');
       }
-
-      const imageFileName = uuidv4() + path.extname(imageFile.originalname);
-      const imagePath = path.join(__dirname, '..', '..', 'assets', 'images', imageFileName);
-
-      try {
-        await sharp(imageFile.buffer)
-          .resize(800)
-          .jpeg({ quality: 80 })
-          .toFile(imagePath);
-      } catch (error) {
-        throw new Error('Erro ao comprimir e salvar a nova imagem');
-      }
-
-      updateProductDto.image = `images/${imageFileName}`;
+      updateProductDto.userId = userId;
     }
-
+  
+    if (imageFile) {
+      // Verificação do tipo de arquivo
+      const validMimeTypes = ['image/jpeg', 'image/png'];
+      if (!validMimeTypes.includes(imageFile.mimetype)) {
+        throw new BadRequestException('Tipo de arquivo não suportado. Por favor, envie apenas JPEG ou PNG.');
+      }
+  
+      const uploadDto: CreateUploadDto = {
+        fieldname: imageFile.fieldname,
+        originalname: imageFile.originalname,
+        encoding: imageFile.encoding,
+        mimetype: imageFile.mimetype,
+        buffer: await fs.readFile(imageFile.path),
+        size: imageFile.size,
+      };
+  
+      // O upload pode lançar uma exceção se falhar
+      const uploadResult = await this.uploadService.upload(uploadDto);
+  
+      // Atualiza a URL da imagem no DTO do produto se o upload for bem-sucedido
+      updateProductDto.image = uploadResult.url;
+    }
+  
     return this.prisma.product.update({
       where: { id },
       data: updateProductDto,
     });
   }
-
+  
+  
   async findAll() {
     return this.prisma.product.findMany({
       include: {
-        user: true, 
+        user: true, // Assumindo que existe uma relação com um modelo de usuário
       },
     });
   }
@@ -87,7 +105,7 @@ export class ProductService {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
-        user: true,
+        user: true, // Assumindo que existe uma relação com um modelo de usuário
       },
     });
     if (!product) {
@@ -105,27 +123,30 @@ export class ProductService {
       throw new NotFoundException(`Produto com ID ${id} não encontrado.`);
     }
 
-    // Remova a imagem associada ao produto, se existir
-    if (existingProduct.image) {
-      await this.deleteImage(existingProduct.image);
-    }
-
     return this.prisma.product.delete({
       where: { id },
     });
   }
 
-  private async deleteImage(imagePath: string) {
-    const fullPath = path.join(__dirname, '..', '..', 'assets', 'images', imagePath);
-    try {
-      if (await fs.stat(fullPath)) {
-        await fs.unlink(fullPath);
-      }
-    } catch (error) {
-      if (error.code !== 'ENOENT') {
-        throw new Error(`Erro ao remover a imagem: ${error.message}`);
-      }
+  async findByUserId(userId: number) {
+    const userIdNumber = Number(userId);
+    if (isNaN(userIdNumber)) {
+      throw new BadRequestException('UserId deve ser um número válido');
     }
+  
+    const products = await this.prisma.product.findMany({
+      where: {
+        userId: userIdNumber,
+      },
+      include: {
+        user: true,
+      },
+    });
+  
+    if (products.length === 0) {
+      throw new NotFoundException(`Nenhum produto encontrado para o userId ${userId}`);
+    }
+  
+    return products;
   }
-
 }

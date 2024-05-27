@@ -27,4 +27,8 @@ export class CreateProductDto implements Product {
     @IsInt()
     @IsNotEmpty()
     userId:number;
+
+    @IsString()
+    @IsNotEmpty()
+    description:string;
 }

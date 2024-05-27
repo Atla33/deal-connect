@@ -62,6 +62,8 @@ CREATE TABLE "Menu" (
     CONSTRAINT "Menu_pkey" PRIMARY KEY ("id")
 );
 
+ALTER TABLE "Product" ADD COLUMN "description" TEXT NOT NULL DEFAULT 'No description';
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 

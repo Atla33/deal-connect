@@ -10,10 +10,11 @@ import { DishModule } from './dish/dish.module';
 import { ProductModule } from './product/product.module';
 import { MenuModule } from './menu/menu.module';
 import { FavoriteModule } from './favorite/favorite.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 
 @Module({
-  imports: [PrismaModule,AuthModule, UserModule, DishModule, ProductModule, MenuModule, FavoriteModule],
+  imports: [PrismaModule,AuthModule, UserModule, DishModule, ProductModule, MenuModule, FavoriteModule, UploadModule],
   controllers: [AppController],
   providers: [AppService,
     {

@@ -27,19 +27,17 @@ model User {
   modifiedAt    DateTime  @default(now())
   products      Product[]
   menu          Menu[]
-  favoritedBy    Favorite[] @relation("FavoritedByUser")
-  favoritedUser  Favorite[] @relation("FavoritedUser")
-  
+  favorites     Favorite[] @relation("UserFavorites")
 }
 
 model Favorite {
   id            Int      @id @default(autoincrement())
   userId        Int
-  favoritedUserId Int
-  user          User     @relation("FavoritedByUser", fields: [userId], references: [id])
-  favoritedUser User     @relation("FavoritedUser", fields: [favoritedUserId], references: [id])
+  productId     Int
+  user          User     @relation("UserFavorites", fields: [userId], references: [id])
+  product       Product  @relation(fields: [productId], references: [id])
 
-  @@unique([userId, favoritedUserId])
+  @@unique([userId, productId])
 }
 
 model Product {
@@ -48,8 +46,10 @@ model Product {
   type        String
   value       String
   image       String
-  userId      Int      
+  userId      Int
+  description String      
   user        User     @relation(fields: [userId], references: [id])
+  favoritedBy Favorite[]
 }
 
 model Dish {

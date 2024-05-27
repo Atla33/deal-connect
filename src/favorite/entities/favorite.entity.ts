@@ -1,5 +1,5 @@
 export class Favorite {
-    id:number;
-    userId:number;
-    favoritedUserId:number;
-}
+    id: number;
+    userId: number;
+    productId: number;
+  }
