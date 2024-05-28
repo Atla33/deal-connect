@@ -1,3 +1,4 @@
+// upload.module.ts
 import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -12,9 +13,7 @@ import { UploadService } from './upload.service';
       storage: diskStorage({
         destination: join(__dirname, 'assets', 'images'),  // Certifique-se de que este diretório existe ou é criado
         filename: (req, file, callback) => {
-          // Gerar um sufixo único usando a data e bytes aleatórios
           const uniqueSuffix = Date.now().toString(36) + randomBytes(8).toString('hex');
-          // Remover espaços e caracteres especiais, mantendo a extensão original
           const cleanName = file.originalname.replace(/\s+/g, '').replace(/[^a-zA-Z0-9.]/g, '');
           const filename = `${cleanName}-${uniqueSuffix}`;
           callback(null, filename);
@@ -34,6 +33,6 @@ import { UploadService } from './upload.service';
   ],
   controllers: [UploadController],
   providers: [UploadService],
+  exports: [UploadService], // Adicione esta linha
 })
 export class UploadModule {}
-
