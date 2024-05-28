@@ -3,6 +3,7 @@ import { CreateUploadDto } from './dto/create-upload.dto';
 import { UpdateUploadDto } from './dto/update-upload.dto';
 import * as fs from 'fs';
 import * as util from 'util';
+import { createClient } from '@supabase/supabase-js';
 
 const unlinkAsync = util.promisify(fs.unlink);
 
