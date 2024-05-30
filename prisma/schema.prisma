@@ -50,7 +50,9 @@ model Product {
   description String      
   user        User     @relation(fields: [userId], references: [id])
   favoritedBy Favorite[]
+  isVisible   Boolean  @default(true)
 }
+
 
 model Dish {
   id          Int      @id @default(autoincrement())

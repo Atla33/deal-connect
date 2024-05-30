@@ -31,4 +31,7 @@ export class CreateProductDto implements Product {
     @IsString()
     @IsNotEmpty()
     description:string;
+
+    @IsNotEmpty()
+    isVisible:boolean;
 }

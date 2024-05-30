@@ -33,7 +33,6 @@ export class ProductService {
       size: imageFile.size,
     };
   
-    // Uma exceção será lançada aqui se o upload falhar.
     const uploadResult = await this.uploadService.upload(uploadDto);
   
     return this.prisma.product.create({
@@ -53,7 +52,6 @@ export class ProductService {
       throw new NotFoundException('Produto não encontrado');
     }
   
-    // Verificação e conversão do userId
     let userId = updateProductDto.userId;
     if (typeof userId === 'string') {
       userId = Number(userId);
@@ -64,7 +62,6 @@ export class ProductService {
     }
   
     if (imageFile) {
-      // Verificação do tipo de arquivo
       const validMimeTypes = ['image/jpeg', 'image/png'];
       if (!validMimeTypes.includes(imageFile.mimetype)) {
         throw new BadRequestException('Tipo de arquivo não suportado. Por favor, envie apenas JPEG ou PNG.');
@@ -96,7 +93,7 @@ export class ProductService {
   async findAll() {
     return this.prisma.product.findMany({
       include: {
-        user: true, // Assumindo que existe uma relação com um modelo de usuário
+        user: true, 
       },
     });
   }
@@ -105,7 +102,7 @@ export class ProductService {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
-        user: true, // Assumindo que existe uma relação com um modelo de usuário
+        user: true,
       },
     });
     if (!product) {

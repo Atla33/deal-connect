@@ -5,4 +5,5 @@ export class Product {
     value:string;
     image:string;
     userId:number;
+    isVisible:boolean;
 }
