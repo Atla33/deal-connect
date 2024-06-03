@@ -76,10 +76,9 @@ export class ProductService {
         size: imageFile.size,
       };
   
-      // O upload pode lançar uma exceção se falhar
+    
       const uploadResult = await this.uploadService.upload(uploadDto);
   
-      // Atualiza a URL da imagem no DTO do produto se o upload for bem-sucedido
       updateProductDto.image = uploadResult.url;
     }
   
@@ -145,5 +144,20 @@ export class ProductService {
     }
   
     return products;
+  }
+
+  async updateVisibility(id: number, isVisible: boolean) {
+    const existingProduct = await this.prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!existingProduct) {
+      throw new NotFoundException('Produto não encontrado');
+    }
+
+    return this.prisma.product.update({
+      where: { id },
+      data: { isVisible },
+    });
   }
 }

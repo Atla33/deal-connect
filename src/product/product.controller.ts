@@ -30,7 +30,6 @@ export class ProductController {
     return this.productService.findAll();
   }
 
-    
   @Get('by-user/:userId')
   findByUserId(@Param('userId', ParseIntPipe) userId: number) {
     return this.productService.findByUserId(userId);
@@ -45,6 +44,11 @@ export class ProductController {
   @UseInterceptors(FileInterceptor('image', multerOptions))
   update(@Param('id', ParseIntPipe) id: number, @Body() updateProductDto: UpdateProductDto, @UploadedFile() imageFile?: Express.Multer.File) {
     return this.productService.update(id, updateProductDto, imageFile);
+  }
+
+  @Patch(':id/visibility')
+  updateVisibility(@Param('id', ParseIntPipe) id: number, @Body() body: { isVisible: boolean }) {
+    return this.productService.updateVisibility(id, body.isVisible);
   }
 
   @Delete(':id')
