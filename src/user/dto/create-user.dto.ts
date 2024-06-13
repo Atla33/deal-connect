@@ -39,4 +39,9 @@ export class CreateUserDto implements User {
   @IsNotEmpty()
   email: string;
 
+  @IsString()
+  emailVerificationCode: string;
+
+  isVerified: boolean;
+
 }

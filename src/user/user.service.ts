@@ -1,103 +1,180 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from './entities/user.entity';
+import { EmailService } from 'src/email/email.service';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        OR: [{ email: createUserDto.email }, { username: createUserDto.username }],
-      },
-    });
+    try {
+      const existingUser = await this.prisma.user.findFirst({
+        where: {
+          OR: [{ email: createUserDto.email }, { username: createUserDto.username }],
+        },
+      });
 
-    if (existingUser) {
-      throw new ConflictException('Email or username already taken');
+      if (existingUser) {
+        throw new ConflictException('Email or username already taken');
+      }
+
+      const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+      const verificationCode = crypto.randomBytes(3).toString('hex');
+
+      const data = {
+        ...createUserDto,
+        password: hashedPassword,
+        emailVerificationCode: verificationCode,
+        isVerified: false,
+      };
+
+      const createUser = await this.prisma.user.create({ data });
+
+      console.log('Calling sendVerificationEmail');
+      await this.emailService.sendVerificationEmail(createUser.email, verificationCode);
+
+      return {
+        ...createUser,
+        password: undefined,
+      };
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw new InternalServerErrorException('Could not create user');
     }
-
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-
-    const data = {
-      ...createUserDto,
-      password: hashedPassword,
-    };
-
-    const createUser = await this.prisma.user.create({ data });
-
-    return {
-      ...createUser,
-      password: undefined,
-    };
   }
 
+  async verifyUser(email: string, code: string): Promise<User> {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { email } });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (user.isVerified) {
+        throw new BadRequestException('User is already verified');
+      }
+
+      if (user.emailVerificationCode !== code) {
+        throw new BadRequestException('Invalid verification code');
+      }
+
+      return this.prisma.user.update({
+        where: { email },
+        data: {
+          isVerified: true,
+          emailVerificationCode: null,
+        },
+      });
+    } catch (error) {
+      console.error('Error verifying user:', error);
+      throw new InternalServerErrorException('Could not verify user');
+    }
+  }
+
+  // Outros métodos do UserService...
+
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({
-      where: { email },
-    });
+    try {
+      return this.prisma.user.findUnique({
+        where: { email },
+      });
+    } catch (error) {
+      console.error('Error finding user by email:', error);
+      throw new InternalServerErrorException('Could not find user by email');
+    }
   }
 
   async findByUsername(username: string) {
-    return this.prisma.user.findUnique({
-      where: { username },
-    });
+    try {
+      return this.prisma.user.findUnique({
+        where: { username },
+      });
+    } catch (error) {
+      console.error('Error finding user by username:', error);
+      throw new InternalServerErrorException('Could not find user by username');
+    }
   }
 
   async findOne(userId: number): Promise<User | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Error finding user by ID:', error);
+      throw new InternalServerErrorException('Could not find user by ID');
     }
-
-    return user;
   }
 
   async findAll(): Promise<User[]> {
-    return this.prisma.user.findMany();
+    try {
+      return this.prisma.user.findMany();
+    } catch (error) {
+      console.error('Error finding all users:', error);
+      throw new InternalServerErrorException('Could not find users');
+    }
   }
 
   async update(userId: number, updateUserDto: UpdateUserDto): Promise<User> {
-    let hashedPassword;
+    try {
+      let hashedPassword;
 
-    if (updateUserDto.password) {
-      hashedPassword = await bcrypt.hash(updateUserDto.password, 10);
+      if (updateUserDto.password) {
+        hashedPassword = await bcrypt.hash(updateUserDto.password, 10);
+      }
+
+      const data = {
+        name: updateUserDto.name,
+        phone: updateUserDto.phone,
+        email: updateUserDto.email,
+        password: hashedPassword || undefined,
+      };
+
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data,
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw new InternalServerErrorException('Could not update user');
     }
-
-    const data = {
-      name: updateUserDto.name,
-      phone: updateUserDto.phone,
-      email: updateUserDto.email,
-      password: hashedPassword || undefined,
-    };
-
-    const user = await this.prisma.user.update({
-      where: { id: userId },
-      data,
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return user;
   }
 
   async remove(userId: number): Promise<User> {
-    const user = await this.prisma.user.delete({
-      where: { id: userId },
-    });
+    try {
+      const user = await this.prisma.user.delete({
+        where: { id: userId },
+      });
 
-    if (!user) {
-      throw new NotFoundException('User not found');
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new InternalServerErrorException('Could not delete user');
     }
-
-    return user;
   }
 }
