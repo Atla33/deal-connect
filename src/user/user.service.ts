@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -51,7 +57,7 @@ export class UserService {
     }
   }
 
-  async verifyUser(email: string, code: string): Promise<User> {
+  async verifyUser(email: string, code: string): Promise<{ message: string, user: User }> {
     try {
       const user = await this.prisma.user.findUnique({ where: { email } });
 
@@ -67,20 +73,26 @@ export class UserService {
         throw new BadRequestException('Invalid verification code');
       }
 
-      return this.prisma.user.update({
+      const updatedUser = await this.prisma.user.update({
         where: { email },
         data: {
           isVerified: true,
           emailVerificationCode: null,
         },
       });
+
+      return {
+        message: 'Cadastro validado com sucesso',
+        user: {
+          ...updatedUser,
+          password: undefined, // Remova a senha dos dados retornados
+        }
+      };
     } catch (error) {
       console.error('Error verifying user:', error);
       throw new InternalServerErrorException('Could not verify user');
     }
   }
-
-  // Outros métodos do UserService...
 
   async findByEmail(email: string) {
     try {
