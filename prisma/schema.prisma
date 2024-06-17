@@ -23,6 +23,7 @@ model User {
   username      String    @unique
   password      String
   emailVerificationCode   String?
+  resetPasswordCode      String?
   isVerified              Boolean  @default(false)
   role          Role      @default(USER)
   createdAt     DateTime  @default(now())

@@ -44,4 +44,7 @@ export class CreateUserDto implements User {
 
   isVerified: boolean;
 
+  @IsString()
+  passwordResetCode: string;
+
 }

@@ -85,12 +85,90 @@ export class UserService {
         message: 'Cadastro validado com sucesso',
         user: {
           ...updatedUser,
-          password: undefined, // Remova a senha dos dados retornados
+          password: undefined,
         }
       };
     } catch (error) {
       console.error('Error verifying user:', error);
       throw new InternalServerErrorException('Could not verify user');
+    }
+  }
+
+  async requestPasswordReset(email: string): Promise<{ message: string }> {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { email } });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const resetPasswordCode = crypto.randomBytes(3).toString('hex');
+
+      await this.prisma.user.update({
+        where: { email },
+        data: {
+          resetPasswordCode,
+        },
+      });
+
+      await this.emailService.sendVerificationEmail(email, resetPasswordCode);
+
+      return { message: 'Código de recuperação enviado para o e-mail' };
+    } catch (error) {
+      console.error('Error requesting password reset:', error);
+      throw new InternalServerErrorException('Could not request password reset');
+    }
+  }
+
+  async verifyResetPasswordCode(email: string, code: string): Promise<{ message: string }> {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { email } });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      if (user.resetPasswordCode !== code) {
+        throw new BadRequestException('Invalid reset password code');
+      }
+
+      // Limpar o código de recuperação após a verificação
+      await this.prisma.user.update({
+        where: { email },
+        data: {
+          resetPasswordCode: null,
+        },
+      });
+
+      return { message: 'Código de recuperação validado com sucesso' };
+    } catch (error) {
+      console.error('Error verifying reset password code:', error);
+      throw new InternalServerErrorException('Could not verify reset password code');
+    }
+  }
+
+  async resetPassword(email: string, newPassword: string): Promise<{ message: string }> {
+    try {
+      const user = await this.prisma.user.findUnique({ where: { email } });
+
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      await this.prisma.user.update({
+        where: { email },
+        data: {
+          password: hashedPassword,
+          resetPasswordCode: null, // Limpar o código de recuperação após a redefinição de senha
+        },
+      });
+
+      return { message: 'Senha redefinida com sucesso' };
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      throw new InternalServerErrorException('Could not reset password');
     }
   }
 

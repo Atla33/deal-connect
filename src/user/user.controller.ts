@@ -39,4 +39,22 @@ export class UserController {
   verifyUser(@Body() verifyUserDto: { email: string; code: string }) {
     return this.userService.verifyUser(verifyUserDto.email, verifyUserDto.code);
   }
+
+  @IsPublic()
+  @Post('request-password-reset')
+  requestPasswordReset(@Body() body: { email: string }) {
+    return this.userService.requestPasswordReset(body.email);
+  }
+
+  @IsPublic()
+  @Post('verify-reset-password-code')
+  verifyResetPasswordCode(@Body() body: { email: string; code: string }) {
+    return this.userService.verifyResetPasswordCode(body.email, body.code);
+  }
+
+  @IsPublic()
+  @Post('reset-password')
+  resetPassword(@Body() body: { email: string; newPassword: string }) {
+    return this.userService.resetPassword(body.email, body.newPassword);
+  }
 }
